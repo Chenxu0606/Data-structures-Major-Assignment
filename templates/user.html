@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户取号</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h1>用户取号</h1>
+
+        <input id="peopleCount" type="number" placeholder="请输入人数">
+
+        <div class="button-group">
+            <button onclick="normalQueue()">普通取号</button>
+            <button onclick="vipQueue()">VIP取号</button>
+        </div>
+
+        <div id="resultBox" class="result-box">
+            <p id="queueNumber"></p>
+            <p id="queueType"></p>
+            <p id="peopleCountShow"></p>
+        </div>
+
+        <div class="button-group">
+            <button class="back-btn" onclick="location.href='/'">返回首页</button>
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/queue.js"></script>
+
+</body>
+</html>
