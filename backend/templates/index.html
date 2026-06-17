@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智策 AI - 智能餐厅管控系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+
+    <div id="app-container">
+
+        <div id="view-role" class="view-section active">
+            <header class="brand-header">
+                <h1>⚡ ZHICE AI</h1>
+                <p class="subtitle">智能数据排队与临期资产控制系统</p>
+            </header>
+            <div class="card-grid">
+                <div class="glass-card" onclick="switchView('view-customer')">
+                    <div class="icon-box">🍽️</div>
+                    <h2>我是顾客</h2>
+                    <p>自助智慧取号、实时查看排队大屏与临期推荐</p>
+                    <button class="action-btn customer-btn">即刻进入</button>
+                </div>
+                <div class="glass-card" onclick="showPasswordModal()">
+                    <div class="icon-box">⚙️</div>
+                    <h2>商家后台</h2>
+                    <p>中央大屏综合叫号、核心桌位调度与最小堆库存控制</p>
+                    <button class="action-btn merchant-btn">管理端登录</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-customer" class="view-section screen-layout">
+            <button class="back-btn" onclick="switchView('view-role')">← 返回</button>
+            <div class="left-panel form-panel">
+                <h2>自助取号中心</h2>
+                <p class="desc">智策AI将实时为您演算全店最佳就餐空间</p>
+                <div class="input-group">
+                    <label>您的尊称</label>
+                    <input type="text" id="cust-name" placeholder="例如：陈女士">
+                </div>
+                <div class="input-group">
+                    <label>就餐人数</label>
+                    <input type="number" id="cust-size" placeholder="请输入纯数字">
+                </div>
+                <div class="button-row">
+                    <button class="submit-btn standard-btn" onclick="takeTicket(false)">标准取号</button>
+                    <button class="submit-btn vip-btn" onclick="takeTicket(true)">👑 VIP 取号</button>
+                </div>
+            </div>
+
+            <div class="right-panel dashboard-panel">
+                <div class="screen-header">
+                    <div class="pulse"></div><h3>现场就餐排队实时大屏</h3>
+                </div>
+                <div class="kpi-row">
+                    <div class="kpi-card"><span class="label">总接单</span><span class="value num-blue" id="kpi-total">0</span></div>
+                    <div class="kpi-card"><span class="label">已接待</span><span class="value num-green" id="kpi-served">0</span></div>
+                    <div class="kpi-card"><span class="label">等候中</span><span class="value num-red" id="kpi-wait">0</span></div>
+                </div>
+                <div class="queue-status-box glass-box">
+                    <h4>📢 队列实时等候细则</h4>
+                    <div class="status-item"><span>舒适小桌 (1-2人)</span><strong class="num-blue"><span id="q-s">0</span> 桌</strong></div>
+                    <div class="status-item"><span>精致中桌 (3-4人)</span><strong class="num-blue"><span id="q-m">0</span> 桌</strong></div>
+                    <div class="status-item"><span>宽敞大桌 (5人以上)</span><strong class="num-blue"><span id="q-l">0</span> 桌</strong></div>
+                    <div class="status-item"><span>👑 VIP 专属特权</span><strong style="color:#ffd60a"><span id="q-vip">0</span> 桌</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-merchant" class="view-section split-layout">
+            <button class="back-btn" onclick="switchView('view-role')">← 退出系统</button>
+            <div class="left-panel">
+                <h2>📢 中央调度叫号</h2>
+                <div class="glass-box action-box">
+                    <button class="btn-mega green-btn" onclick="callNextCustomer()">🔊 呼叫队列下一位</button>
+                </div>
+
+                <h3>🍏 实体桌位图谱 (一键释放资产)</h3>
+                <div class="glass-box table-box">
+                    <p class="status-text">当前占用: 小桌 <span id="tbl-s">0/4</span> | 中桌 <span id="tbl-m">0/3</span> | 大桌 <span id="tbl-l">0/2</span></p>
+                    <div class="button-row">
+                        <button class="btn-sm" onclick="releaseTable('S')">释放小桌</button>
+                        <button class="btn-sm" onclick="releaseTable('M')">释放中桌</button>
+                        <button class="btn-sm" onclick="releaseTable('L')">释放大桌</button>
+                    </div>
+                </div>
+                <button class="btn-text" onclick="switchView('view-inventory')" style="margin-top:20px; color:#0a84ff; font-size:16px;">➔ 前往【库存控制台】</button>
+            </div>
+
+            <div class="right-panel">
+                <h2>⚡ 智策 AI 雷达看板</h2>
+                <div class="glass-box ai-box">
+                    <h4>最新叫号动态</h4>
+                    <p id="ai-call-log" style="color:#8e8e93; min-height: 40px;">等待系统呼叫...</p>
+                    <hr style="border-color:#2c2c2e; margin:15px 0;">
+                    <h4>🤖 智能推销指令</h4>
+                    <p id="ai-tip-log" style="color:#ffd60a; font-weight:bold;">看板就绪，监听临期堆数据...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-inventory" class="view-section split-layout">
+            <button class="back-btn" onclick="switchView('view-merchant')">← 返回中央调度</button>
+            <div class="left-panel" style="flex:6">
+                <h2>🍎 临期智能堆监控</h2>
+                <div class="glass-box">
+                    <div id="inventory-list" class="inv-list">
+                        </div>
+                    <hr style="border-color:#2c2c2e; margin:15px 0;">
+                    <div class="consume-row">
+                        <input type="number" id="consume-qty" placeholder="消耗数量" style="width: 80px;" value="1">
+                        <button class="btn-sm yellow-btn" onclick="consumeInventory()">🥑 控量级联消耗</button>
+                        <button class="btn-sm" style="background:#ff9500" onclick="simulateTimePass()">⏳ 模拟时间+1天</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel form-panel" style="flex:4; padding-top: 50px;">
+                <h3>📥 增量食材录入</h3>
+                <input type="text" id="inv-name" placeholder="食材名称">
+                <input type="number" id="inv-qty" placeholder="数量 (整数)">
+                <input type="text" id="inv-unit" placeholder="单位 (如: 份)">
+                <input type="number" id="inv-days" placeholder="初始保质期天数">
+                <button class="submit-btn standard-btn" style="margin-top:20px" onclick="addInventory()">写入底层 O(log N) 堆</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="auth-modal" class="modal-overlay">
+        <div class="glass-card modal-card">
+            <h3>安全身份验证</h3>
+            <p>请输入后台管理员授权密码</p>
+            <input type="password" id="admin-pwd" placeholder="密码：admin">
+            <div class="button-row">
+                <button class="btn-sm red-btn" onclick="closeModal()">取消</button>
+                <button class="btn-sm standard-btn" onclick="verifyPassword()">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html>

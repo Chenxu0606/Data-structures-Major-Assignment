@@ -1,0 +1,99 @@
+/* 全局重置与字体 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: #000000;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+}
+
+/* 动态光晕背景 */
+.glow-bg {
+    position: fixed; top: -20%; left: -10%;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.2) 0%, rgba(0,0,0,0) 70%);
+    z-index: 0; pointer-events: none;
+}
+
+#app-container {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+}
+
+/* ================== SPA 视图切换动画 ================== */
+.view-section {
+    display: none;
+    width: 100%; height: 100%;
+    padding: 40px;
+    animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.view-section.active { display: flex; flex-direction: column; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ================== 通用毛玻璃组件 ================== */
+.glass-card, .glass-box {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px; padding: 30px;
+}
+.glass-card:hover { transform: translateY(-5px); border-color: rgba(0, 122, 255, 0.3); transition: all 0.3s; }
+
+/* ================== 页面1：角色选择 ================== */
+#view-role { align-items: center; justify-content: center; text-align: center; }
+.brand-header h1 { font-size: 3rem; background: linear-gradient(180deg, #fff 0%, #a1a1a1 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.brand-header .subtitle { color: #8e8e93; margin: 10px 0 50px 0; }
+.card-grid { display: flex; gap: 30px; }
+.card-grid .glass-card { width: 320px; cursor: pointer; }
+.icon-box { font-size: 3rem; margin-bottom: 15px; }
+.card-grid p { color: #a1a1a6; height: 60px; font-size: 0.9rem; margin-top: 10px; margin-bottom: 25px;}
+
+/* ================== 表单与按钮基础 ================== */
+input {
+    width: 100%; padding: 14px; background: #1c1c1e;
+    border: 1px solid #2c2c2e; border-radius: 12px;
+    color: white; font-size: 1rem; margin-bottom: 15px;
+}
+input:focus { outline: none; border-color: #0a84ff; }
+button { border: none; cursor: pointer; font-weight: 600; border-radius: 12px; transition: opacity 0.2s; }
+button:hover { opacity: 0.8; }
+
+.action-btn { width: 100%; padding: 14px; font-size: 1rem; }
+.customer-btn, .standard-btn { background: #007aff; color: white; }
+.merchant-btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+.vip-btn { background: #ffd60a; color: black; }
+.green-btn { background: #30d158; color: white; }
+.red-btn { background: #ff453a; color: white; }
+.yellow-btn { background: #ffd60a; color: black; }
+
+.button-row { display: flex; gap: 10px; }
+.submit-btn { flex: 1; padding: 16px; }
+.btn-sm { flex: 1; padding: 12px; background: #2c2c2e; color: white; }
+.btn-mega { width: 100%; padding: 20px; font-size: 1.2rem; border-radius: 16px; }
+.back-btn { position: absolute; top: 30px; left: 30px; background: transparent; color: #8e8e93; font-size: 1rem; }
+
+/* ================== 双栏排版 (页面2/3/4) ================== */
+.screen-layout, .split-layout { flex-direction: row !important; padding: 0 !important; }
+.left-panel, .right-panel { flex: 1; padding: 60px 40px; display: flex; flex-direction: column; justify-content: center; }
+.left-panel { background: #0a0a0c; border-right: 1px solid #1c1c1e; }
+
+/* ================== 大屏专属 UI ================== */
+.screen-header { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; }
+.pulse { width: 10px; height: 10px; background: #30d158; border-radius: 50%; box-shadow: 0 0 10px #30d158; }
+.kpi-row { display: flex; gap: 15px; margin-bottom: 30px; }
+.kpi-card { background: #1c1c1e; border-radius: 16px; padding: 20px; flex: 1; display: flex; flex-direction: column; }
+.kpi-card .label { color: #8e8e93; font-size: 0.85rem; margin-bottom: 5px; }
+.kpi-card .value { font-size: 2.2rem; font-weight: bold; }
+.num-blue { color: #0a84ff; } .num-green { color: #30d158; } .num-red { color: #ff453a; }
+.status-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #2c2c2e; font-size: 1.1rem; }
+
+/* ================== 库存列表 UI ================== */
+.inv-list { max-height: 300px; overflow-y: auto; }
+.inv-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.tag-safe { color: #30d158; } .tag-warn { color: #ffd60a; } .tag-danger { color: #ff453a; }
+
+/* ================== 弹窗 ================== */
+.modal-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal-card { width: 350px; text-align: center; }
