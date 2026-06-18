@@ -2,35 +2,56 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>排队管理</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>叫号管理系统</title>
+    <style>
+        body, html { margin: 0; padding: 0; min-height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; }
+        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
+        .bubble { position: absolute; border-radius: 50%; opacity: 0.5; width: 60vw; height: 60vw; background: radial-gradient(circle, #91f6e3 0%, transparent 75%); bottom: -10%; right: -10%; }
+        .wrapper { position: relative; z-index: 10; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h2 { margin: 0; font-weight: 700; }
+        .btn-back { background: #000; color: white; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; }
+        .panel { background: rgba(255,255,255,0.45); backdrop-filter: blur(25px); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 8px 32px rgba(0,0,0,0.02); }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .num { font-size: 18px; font-weight: 700; font-family: monospace; }
+        .btn-action { border: none; padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; margin-left: 6px; }
+        .btn-call { background: rgba(0,122,255,0.1); color: #007AFF; }
+        .btn-miss { background: rgba(255,59,48,0.1); color: #FF3B30; }
+    </style>
 </head>
-
 <body>
-
-<div class="container">
-    <div class="card">
-
-        <h1>排队信息管理</h1>
-
-        <h2 id="tableCount"></h2>
-
-        <button onclick="callQueue()">一键叫号</button>
-
-        <h3 id="callingText"></h3>
-
-        <div id="queueList"></div>
-
-        <div class="button-group">
-            <button class="back-btn" onclick="location.href='/admin'">
-                返回
-            </button>
+    <div class="floating-bubbles"><div class="bubble"></div></div>
+    <div class="wrapper">
+        <div class="header">
+            <h2>当前排队叫号管理</h2>
+            <a href="/admin_menu" class="btn-back">返回菜单</a>
         </div>
-
+        <div class="panel" id="listContainer">加载队列中...</div>
     </div>
-</div>
-
-<script src="/js/queue_admin.js"></script>
-
+    <script>
+        function refresh() {
+            fetch('/api/queue/list').then(r => r.json()).then(res => {
+                if(res.code === 200) {
+                    const c = document.getElementById('listContainer');
+                    if(res.data.length === 0) { c.innerHTML = '<div style="color:#86868b;text-align:center;">暂无顾客排队</div>'; return; }
+                    c.innerHTML = res.data.map(i => `
+                        <div class="row">
+                            <div>
+                                <span class="num" style="color:${i.queue_type==='VIP'?'#ff9500':'#1d1d1f'}">${i.queue_number}</span>
+                                <span style="font-size:13px; color:#86868b; margin-left:10px;">${i.people_count}人</span>
+                            </div>
+                            <div>
+                                <button class="btn-action btn-call" onclick="opt(${i.id}, 'call')">就餐</button>
+                                <button class="btn-action btn-miss" onclick="opt(${i.id}, 'miss')">过号</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+        function opt(id, act) { fetch('/api/queue/operate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id, action:act})}).then(() => refresh()); }
+        document.addEventListener("DOMContentLoaded", () => { refresh(); setInterval(refresh, 4000); });
+    </script>
 </body>
 </html>

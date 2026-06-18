@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员登录</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; }
+        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
+        .bubble { position: absolute; border-radius: 50%; opacity: 0.5; width: 60vw; height: 60vw; background: radial-gradient(circle, #f7b0ff 0%, transparent 75%); top: -10%; right: -10%; }
+        .card { position: relative; z-index: 10; background: rgba(255,255,255,0.5); backdrop-filter: blur(30px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.03); width: 100%; max-width: 400px; text-align: center; }
+        h2 { font-size: 26px; margin-bottom: 24px; font-weight: 700; }
+        input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; background: rgba(255,255,255,0.7); outline: none; box-sizing: border-box; font-size: 15px; }
+        button { width: 100%; padding: 14px; background: #000; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.2s; }
+        button:hover { opacity: 0.85; transform: scale(1.01); }
+    </style>
+</head>
+<body>
+    <div class="floating-bubbles"><div class="bubble"></div></div>
+    <div class="card">
+        <h2>管理员安全登录</h2>
+        <input type="text" id="username" placeholder="请输入管理员账号">
+        <input type="password" id="password" placeholder="请输入密码">
+        <button onclick="handleLogin()">登录</button>
+    </div>
+    <script>
+        function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: u, password: p})
+            }).then(r => r.json()).then(res => {
+                if(res.code === 200) { window.location.href = '/admin_menu'; }
+                else { alert(res.msg); }
+            });
+        }
+    </script>
+</body>
+</html>

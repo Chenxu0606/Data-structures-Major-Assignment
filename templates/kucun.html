@@ -2,38 +2,68 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>库存管理</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存管理系统</title>
+    <style>
+        body, html { margin: 0; padding: 0; min-height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; }
+        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
+        .bubble { position: absolute; border-radius: 50%; opacity: 0.5; width: 60vw; height: 60vw; background: radial-gradient(circle, #f7b0ff 0%, transparent 75%); top: -10%; left: -10%; }
+        .wrapper { position: relative; z-index: 10; max-width: 700px; margin: 40px auto; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h2 { margin: 0; font-weight: 700; }
+        .btn-back { background: #000; color: white; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; }
+        .panel { background: rgba(255,255,255,0.45); backdrop-filter: blur(25px); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 8px 32px rgba(0,0,0,0.02); }
+        .bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.5); outline: none; }
+        .btn-add { background: #007AFF; color: white; border: none; padding: 0 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+        .badge-ok { background: rgba(52,199,89,0.1); color: #34C759; }
+        .badge-err { background: rgba(255,59,48,0.1); color: #FF3B30; }
+        .btn-del { border: none; background: rgba(255,59,48,0.1); color: #FF3B30; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+    </style>
 </head>
-
 <body>
-
-<div class="container">
-    <div class="card">
-
-        <h1>库存管理系统</h1>
-
-        <input id="foodName" placeholder="输入食材名称">
-
-        <button onclick="addFood()">新增食材</button>
-
-        <div id="foodList"></div>
-
-        <button style="margin-top:20px;background:#e74c3c"
-                onclick="deleteExpired()">
-            删除过期食材
-        </button>
-
-        <div class="button-group">
-            <button class="back-btn" onclick="location.href='/admin'">
-                返回
-            </button>
+    <div class="floating-bubbles"><div class="bubble"></div></div>
+    <div class="wrapper">
+        <div class="header">
+            <h2>后厨食材库存管理</h2>
+            <div>
+                <button class="btn-del" style="background:#000; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; font-weight:600;" onclick="clearExpired()">清理过期</button>
+                <a href="/admin_menu" class="btn-back">返回菜单</a>
+            </div>
         </div>
-
+        <div class="panel">
+            <div class="bar">
+                <input type="text" id="foodName" placeholder="请输入入库物料名称">
+                <button class="btn-add" onclick="addFood()">入库</button>
+            </div>
+            <div id="kucunContainer">加载中...</div>
+        </div>
     </div>
-</div>
-
-<script src="/js/kucun.js"></script>
-
+    <script>
+        function refresh() {
+            fetch('/api/kucun/list').then(r => r.json()).then(res => {
+                if(res.code === 200) {
+                    document.getElementById('kucunContainer').innerHTML = res.data.map(i => `
+                        <div class="row">
+                            <span style="font-weight:500;">${i.food_name}</span>
+                            <div>
+                                <span class="badge ${i.status==='expired'?'badge-err':'badge-ok'}">${i.status==='expired'?'已到期':'安全'}</span>
+                                <button class="btn-del" onclick="del(${i.id})">移除</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            });
+        }
+        function addFood() {
+            const n = document.getElementById('foodName').value.trim(); if(!n) return;
+            fetch('/api/kucun/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({food_name:n})}).then(() => { document.getElementById('foodName').value=''; refresh(); });
+        }
+        function del(id) { fetch('/api/kucun/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}).then(() => refresh()); }
+        function clearExpired() { fetch('/api/kucun/clear_expired', {method:'POST'}).then(() => refresh()); }
+        document.addEventListener("DOMContentLoaded", refresh);
+    </script>
 </body>
 </html>

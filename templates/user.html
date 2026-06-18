@@ -2,39 +2,69 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>用户取号</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自助取号终端</title>
+    <style>
+        body, html { margin: 0; padding: 0; min-height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; }
+        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; top:0; left:0; z-index: 1; filter: blur(140px); background: #fff; }
+        .bubble { position: absolute; border-radius: 50%; opacity: 0.6; width: 60vw; height: 60vw; background: radial-gradient(circle, #b0c5f3 0%, transparent 75%); top: -10%; left: -10%; }
+        .card { position: relative; z-index: 10; background: rgba(255,255,255,0.45); backdrop-filter: blur(30px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 12px 40px rgba(0,0,0,0.03); width: 100%; max-width: 440px; text-align: center; }
+        h2 { font-size: 26px; font-weight: 700; margin-bottom: 24px; }
+        input { width: 100%; padding: 14px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; background: rgba(255,255,255,0.65); outline: none; box-sizing: border-box; font-size: 15px; }
+        .btn-box { display: flex; gap: 14px; }
+        button { flex: 1; padding: 14px; font-size: 15px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.2s; color: white; }
+        .btn-normal { background: #007AFF; }
+        .btn-vip { background: #000; }
+        button:hover { transform: scale(1.02); opacity: 0.9; }
+
+        /* 统一风格的微调弹窗 */
+        .modal-mask { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.15); backdrop-filter: blur(10px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-radius: 24px; padding: 35px; width: 80%; max-width: 320px; text-align: center; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 45px rgba(0,0,0,0.1); transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-mask.active { opacity: 1; pointer-events: auto; }
+        .modal-mask.active .modal { transform: scale(1); }
+        .huge-num { font-size: 64px; font-weight: 200; margin: 15px 0; color: #1d1d1f; }
+    </style>
 </head>
-
 <body>
-
-<div class="container">
+    <div class="floating-bubbles"><div class="bubble"></div></div>
     <div class="card">
-
-        <h1>用户取号</h1>
-
-        <input id="peopleCount" type="number" placeholder="请输入人数">
-
-        <div class="button-group">
-            <button onclick="normalQueue()">普通取号</button>
-            <button onclick="vipQueue()">VIP取号</button>
+        <h2>自助取号终端</h2>
+        <input type="number" id="peopleCount" placeholder="请输入就餐人数" min="1">
+        <div class="btn-box">
+            <button class="btn-normal" onclick="takeTicket('normal')">普通取号</button>
+            <button class="btn-vip" onclick="takeTicket('VIP')">VIP取号</button>
         </div>
-
-        <div id="resultBox" class="result-box">
-            <p id="queueNumber"></p>
-            <p id="queueType"></p>
-            <p id="peopleCountShow"></p>
-        </div>
-
-        <div class="button-group">
-            <button class="back-btn" onclick="location.href='/'">返回首页</button>
-        </div>
-
     </div>
-</div>
 
-<script src="/js/api.js"></script>
-<script src="/js/queue.js"></script>
+    <div class="modal-mask" id="ticketModal">
+        <div class="modal">
+            <div style="font-size:13px; color:#6e6e73; font-weight:600;">您的就餐号码</div>
+            <div class="huge-num" id="popNum">--</div>
+            <div style="font-size:14px; color:#34C759; font-weight:600; margin-bottom:20px;" id="popAhead">前方等待: -- 桌</div>
+            <button style="background:#000; width:100%;" onclick="closeModal()">确定</button>
+        </div>
+    </div>
 
+    <script>
+        function takeTicket(type) {
+            const count = document.getElementById('peopleCount').value;
+            if(!count || count <= 0) { alert('请输入有效人数'); return; }
+            fetch('/api/queue/take', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({type: type, people_count: parseInt(count)})
+            }).then(r => r.json()).then(res => {
+                if(res.code === 200) {
+                    document.getElementById('popNum').innerText = res.data.queue_number;
+                    document.getElementById('popAhead').innerText = '前方等待: ' + res.data.ahead_count + ' 桌';
+                    document.getElementById('ticketModal').classList.add('active');
+                }
+            });
+        }
+        function closeModal() {
+            document.getElementById('ticketModal').classList.remove('active');
+            document.getElementById('peopleCount').value = '';
+        }
+    </script>
 </body>
 </html>

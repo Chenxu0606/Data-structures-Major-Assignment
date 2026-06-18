@@ -2,24 +2,33 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>餐厅系统首页</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智策餐饮系统</title>
+    <style>
+        :root { --apple-blue: #007AFF; }
+        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
+        .bubble { position: absolute; border-radius: 50%; opacity: 0.6; mix-blend-mode: multiply; }
+        .bubble:nth-child(1) { width: 60vw; height: 60vw; top: -10%; left: -10%; background: radial-gradient(circle, #b0c5f3 0%, transparent 75%); }
+        .bubble:nth-child(2) { width: 60vw; height: 60vw; bottom: -10%; right: -10%; background: radial-gradient(circle, #91f6e3 0%, transparent 75%); }
+
+        .container { position: relative; z-index: 10; text-align: center; width: 85vw; max-width: 1000px; padding: 50px; background: rgba(255,255,255,0.45); backdrop-filter: blur(30px); border-radius: 32px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 50px rgba(0,0,0,0.03); }
+        h1 { font-size: 42px; font-weight: 700; margin-bottom: 40px; letter-spacing: -1px; }
+        .btn-group { display: flex; gap: 30px; justify-content: center; }
+        .btn { flex: 1; max-width: 300px; padding: 24px; font-size: 18px; font-weight: 600; text-decoration: none; border-radius: 20px; transition: transform 0.25s ease; color: white; text-align: center; }
+        .btn-user { background: var(--apple-blue); box-shadow: 0 8px 25px rgba(0,122,255,0.25); }
+        .btn-admin { background: #000; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        .btn:hover { transform: scale(1.03) translateY(-2px); opacity: 0.9; }
+    </style>
 </head>
-
 <body>
-
-<div class="container">
-    <div class="card">
-
-        <h1>餐厅取号系统</h1>
-        <p class="tip">请选择入口</p>
-
-        <button onclick="location.href='/user'">用户端</button>
-
-        <button onclick="location.href='/admin'">管理员端</button>
-
+    <div class="floating-bubbles"><div class="bubble"></div><div class="bubble"></div></div>
+    <div class="container">
+        <h1>智策餐饮系统</h1>
+        <div class="btn-group">
+            <a href="/user" class="btn btn-user">自助取号</a>
+            <a href="/login" class="btn btn-admin">管理员端</a>
+        </div>
     </div>
-</div>
-
 </body>
 </html>

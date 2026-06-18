@@ -1,32 +1,16 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <title>管理员控制台</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8"><title>控制中心</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
-
-<div class="container">
-    <div class="card">
-
-        <h1>管理员控制台</h1>
-
-        <button onclick="location.href='/queue_admin'">
-            排队信息管理
-        </button>
-
-        <button onclick="location.href='/kuchun'">
-            库存管理
-        </button>
-
-        <button class="back-btn" onclick="location.href='/'">
-            返回首页
-        </button>
-
+    <div class="app-container">
+        <h1>后台管理工作台</h1>
+        <p class="subtitle">Restaurant Management Center</p>
+        <button class="btn btn-primary" style="margin-bottom:14px; padding:14px;" onclick="location.href='/queue_admin'">排队调度与大厅叫号</button>
+        <button class="btn btn-primary" style="margin-bottom:14px; background:#424245;" onclick="location.href='/kucun'">后厨物料看板管理</button>
+        <button class="btn btn-secondary" onclick="location.href='/'">退出管理员身份</button>
     </div>
-</div>
-
 </body>
 </html>
