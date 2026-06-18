@@ -8,19 +8,35 @@
         body, html { margin: 0; padding: 0; min-height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; }
         .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
         .bubble { position: absolute; border-radius: 50%; opacity: 0.5; width: 60vw; height: 60vw; background: radial-gradient(circle, #f7b0ff 0%, transparent 75%); top: -10%; left: -10%; }
-        .wrapper { position: relative; z-index: 10; max-width: 700px; margin: 40px auto; padding: 20px; }
+        .wrapper { position: relative; z-index: 10; max-width: 750px; margin: 40px auto; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         h2 { margin: 0; font-weight: 700; }
-        .btn-back { background: #000; color: white; padding: 10px 16px; border-radius: 10px; text-decoration: none; font-size: 14px; font-weight: 600; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn-base { border: none; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+        .btn-black { background: #000; color: white; }
+        .btn-blue { background: #007AFF; color: white; }
+        .btn-red { background: rgba(255,59,48,0.1); color: #FF3B30; }
+
         .panel { background: rgba(255,255,255,0.45); backdrop-filter: blur(25px); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 8px 32px rgba(0,0,0,0.02); }
-        .bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.5); outline: none; }
-        .btn-add { background: #007AFF; color: white; border: none; padding: 0 20px; border-radius: 10px; font-weight: 600; cursor: pointer; }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 12px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .info-col { display: flex; flex-direction: column; gap: 4px; }
+        .time-label { font-size: 12px; color: #86868b; }
         .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
         .badge-ok { background: rgba(52,199,89,0.1); color: #34C759; }
         .badge-err { background: rgba(255,59,48,0.1); color: #FF3B30; }
-        .btn-del { border: none; background: rgba(255,59,48,0.1); color: #FF3B30; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+        .btn-del { border: none; background: rgba(255,59,48,0.1); color: #FF3B30; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; margin-left: 10px; }
+
+        /* Apple 风格弹窗 */
+        .modal-mask { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.12); backdrop-filter: blur(12px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal { background: rgba(255,255,255,0.85); backdrop-filter: blur(25px); border-radius: 24px; padding: 30px; width: 90%; max-width: 360px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 45px rgba(0,0,0,0.08); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .modal-mask.active { opacity: 1; pointer-events: auto; }
+        .modal-mask.active .modal { transform: scale(1); }
+        .modal h3 { margin: 0 0 20px 0; font-size: 20px; font-weight: 700; text-align: center; }
+        .form-item { margin-bottom: 16px; text-align: left; }
+        .form-item label { display: block; font-size: 13px; color: #6e6e73; font-weight: 600; margin-bottom: 6px; }
+        .form-item input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.6); outline: none; box-sizing: border-box; font-size: 14px; }
+        .modal-btn-group { display: flex; gap: 12px; margin-top: 24px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; text-align: center; }
     </style>
 </head>
 <body>
@@ -28,26 +44,68 @@
     <div class="wrapper">
         <div class="header">
             <h2>后厨食材库存管理</h2>
-            <div>
-                <button class="btn-del" style="background:#000; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; font-weight:600;" onclick="clearExpired()">清理过期</button>
-                <a href="/admin_menu" class="btn-back">返回菜单</a>
+            <div class="btn-group">
+                <button class="btn-base btn-blue" onclick="openAddModal()">添加食材</button>
+                <button class="btn-base btn-red" onclick="clearExpired()">清理过期</button>
+                <a href="/admin_menu" class="btn-base btn-black">返回菜单</a>
             </div>
         </div>
-        <div class="panel">
-            <div class="bar">
-                <input type="text" id="foodName" placeholder="请输入入库物料名称">
-                <button class="btn-add" onclick="addFood()">入库</button>
+        <div class="panel" id="kucunContainer">加载中...</div>
+    </div>
+
+    <div class="modal-mask" id="addStockModal">
+        <div class="modal">
+            <h3>食材入库登记</h3>
+            <div class="form-item">
+                <label>食材名称</label>
+                <input type="text" id="foodName" placeholder="例如：波士顿龙虾">
             </div>
-            <div id="kucunContainer">加载中...</div>
+            <div class="form-item">
+                <label>入库时间</label>
+                <input type="date" id="inTime">
+            </div>
+            <div class="form-item">
+                <label>过期时间</label>
+                <input type="date" id="expTime">
+            </div>
+            <div class="modal-btn-group">
+                <button class="modal-btn" style="background: rgba(0,0,0,0.05); color:#000;" onclick="closeAddModal()">取消</button>
+                <button class="modal-btn" style="background: #007AFF; color:#fff;" onclick="submitFood()">确认入库</button>
+            </div>
         </div>
     </div>
+
     <script>
+        // 自动格式化当天日期
+        function getTodayDate() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        function openAddModal() {
+            document.getElementById('inTime').value = getTodayDate();
+            document.getElementById('addStockModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addStockModal').classList.remove('active');
+            document.getElementById('foodName').value = '';
+            document.getElementById('expTime').value = '';
+        }
+
         function refresh() {
             fetch('/api/kucun/list').then(r => r.json()).then(res => {
                 if(res.code === 200) {
+                    if(res.data.length === 0) {
+                        document.getElementById('kucunContainer').innerHTML = '<div style="color:#86868b;text-align:center;padding:20px 0;">暂无库存物料</div>';
+                        return;
+                    }
                     document.getElementById('kucunContainer').innerHTML = res.data.map(i => `
                         <div class="row">
-                            <span style="font-weight:500;">${i.food_name}</span>
+                            <div class="info-col">
+                                <span style="font-weight:600; font-size:16px; color:#1d1d1f;">${i.food_name}</span>
+                                <span class="time-label">入库: ${i.in_time || '--'} | 到期: ${i.exp_time || '--'}</span>
+                            </div>
                             <div>
                                 <span class="badge ${i.status==='expired'?'badge-err':'badge-ok'}">${i.status==='expired'?'已到期':'安全'}</span>
                                 <button class="btn-del" onclick="del(${i.id})">移除</button>
@@ -57,10 +115,25 @@
                 }
             });
         }
-        function addFood() {
-            const n = document.getElementById('foodName').value.trim(); if(!n) return;
-            fetch('/api/kucun/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({food_name:n})}).then(() => { document.getElementById('foodName').value=''; refresh(); });
+
+        function submitFood() {
+            const name = document.getElementById('foodName').value.trim();
+            const inTime = document.getElementById('inTime').value;
+            const expTime = document.getElementById('expTime').value;
+
+            if(!name) { alert('请输入食材名称'); return; }
+            if(!expTime) { alert('请设置过期时间'); return; }
+
+            fetch('/api/kucun/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({food_name: name, in_time: inTime, exp_time: expTime})
+            }).then(() => {
+                closeAddModal();
+                refresh();
+            });
         }
+
         function del(id) { fetch('/api/kucun/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}).then(() => refresh()); }
         function clearExpired() { fetch('/api/kucun/clear_expired', {method:'POST'}).then(() => refresh()); }
         document.addEventListener("DOMContentLoaded", refresh);

@@ -11,8 +11,10 @@
         .card { position: relative; z-index: 10; background: rgba(255,255,255,0.5); backdrop-filter: blur(30px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 15px 35px rgba(0,0,0,0.03); width: 100%; max-width: 400px; text-align: center; }
         h2 { font-size: 26px; margin-bottom: 24px; font-weight: 700; }
         input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; background: rgba(255,255,255,0.7); outline: none; box-sizing: border-box; font-size: 15px; }
-        button { width: 100%; padding: 14px; background: #000; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.2s; }
+        button { width: 100%; padding: 14px; background: #000; color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 15px; transition: all 0.2s; margin-bottom: 16px; }
         button:hover { opacity: 0.85; transform: scale(1.01); }
+        .back-home { display: inline-block; color: #007AFF; text-decoration: none; font-size: 14px; font-weight: 500; transition: opacity 0.2s; }
+        .back-home:hover { opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -22,6 +24,9 @@
         <input type="text" id="username" placeholder="请输入管理员账号">
         <input type="password" id="password" placeholder="请输入密码">
         <button onclick="handleLogin()">登录</button>
+        <div>
+            <a href="/" class="back-home">返回系统首页</a>
+        </div>
     </div>
     <script>
         function handleLogin() {
