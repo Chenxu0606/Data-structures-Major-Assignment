@@ -1,276 +1,360 @@
 from flask import Flask, render_template, request, jsonify
-from datetime import datetime
+import datetime
 
 app = Flask(__name__)
 
 
 # ==============================================================================
-# 【数据结构定义区】 - 面向大作业考核标准
+# 核心数据结构与模拟数据库初始化
 # ==============================================================================
 
 class QueueNode:
-    """
-    数据结构：队列节点 (Queue Node)
-    描述：用于封装每一位排队顾客的结构化实体数据
-    """
-
-    def __init__(self, q_id, queue_number, q_type, people_count):
-        self.id = q_id  # 节点唯一标识（自增ID）
-        self.queue_number = queue_number  # 展现给顾客的号码（如 V001, N002）
-        self.queue_type = q_type  # 顾客类型：'VIP' 或 'normal'
-        self.people_count = people_count  # 就餐人数
-        self.status = "waiting"  # 状态流转："waiting", "called", "missed"
-
-    def to_dict(self):
-        """将节点对象序列化为字典，方便前端 JSON 解析"""
-        return {
-            "id": self.id,
-            "queue_number": self.queue_number,
-            "queue_type": self.queue_type,
-            "people_count": self.people_count,
-            "status": self.status
-        }
+    def __init__(self, node_id, queue_number, table_category, people_count, queue_type):
+        self.id = int(node_id)
+        self.queue_number = queue_number
+        self.table_category = table_category  # A-小桌, B-中桌, C-大桌
+        self.people_count = people_count
+        self.queue_type = queue_type
+        self.status = "waiting"  # waiting-等待中, called-已叫号, missed-已过号
+        self.next = None
 
 
-class PriorityQueue:
-    """
-    数据结构：优先级队列 (Priority Queue)
-    描述：手写顺序存储的优先级队列，通过动态插入维持队列的整体高级别优先序
-    """
+queue_head = None
+node_counter = 4
 
-    def __init__(self):
-        self.items = []  # 底层采用顺序表（列表）存储节点
+# 初始化内置模拟数据
+node1 = QueueNode(1, "A001", "A", 2, "普通用户")
+node2 = QueueNode(2, "B002", "B", 4, "普通用户")
+node3 = QueueNode(3, "C003", "C", 6, "普通用户")
 
-    def is_empty(self):
-        return len(self.items) == 0
+queue_head = node1
+node1.next = node2
+node2.next = node3
 
-    def size(self):
-        return len(self.items)
+customer_hash_table = {
+    "A001": node1,
+    "B002": node2,
+    "C003": node3
+}
 
-    def enqueue(self, node):
-        """
-        【算法名称】：基于特定优先级的单遍扫描插入算法 (Priority Insertion Sort)
-        【算法描述】：新节点入队时，遍历当前队列。VIP 享有最高优先级，排在所有普通顾客(normal)前面；
-                     同等级别内部则遵循先进先出(FIFO)原则，按 id 先来后到。
-        【时间复杂度】：O(N) - 最坏情况下需要遍历整个队列找到插入点
-        【空间复杂度】：O(1) - 仅需常数级辅助指针
-        """
-        insert_index = 0
-        for i, item in enumerate(self.items):
-            # 核心策略判断：若当前新节点是 VIP，而队列中遍历到的旧节点是普通顾客
-            # 则说明找到了 VIP “插队”到普通顾客前面的切入点
-            if node.queue_type == 'VIP' and item.queue_type == 'normal':
-                insert_index = i
-                break
-            insert_index = i + 1
-
-        # 在计算出的最右边界索引处执行插入，动态维持队列的有序性
-        self.items.insert(insert_index, node)
-
-    def get_waiting_list(self):
-        """
-        【算法名称】：线性过滤算法 (Linear Filtering)
-        【时间复杂度】：O(N) - 遍历整个顺序表
-        """
-        return [item.to_dict() for item in self.items if item.status == 'waiting']
-
-
-# ==============================================================================
-# 【全局数据实例化】
-# ==============================================================================
-
-# 实例化手写的优先级队列系统
-queue_system = PriorityQueue()
-
-# 模拟食材库存顺序表（作为线性表的应用）
-mock_kucun = [
-    {"id": 1, "food_name": "波士顿龙虾", "in_time": "2026-06-18", "exp_time": "2026-06-25", "status": "normal"},
-    {"id": 2, "food_name": "冰鲜三文鱼", "in_time": "2026-06-10", "exp_time": "2026-06-15", "status": "expired"}
+# 食材仓储模拟数据
+inventory_db = [
+    {"id": 1, "food_name": "三文鱼", "in_time": "2026-06-12", "exp_time": "2026-06-15", "status": "expired"},
+    {"id": 2, "food_name": "和牛肉", "in_time": "2026-06-16", "exp_time": "2026-06-25", "status": "safe"},
+    {"id": 3, "food_name": "生菜", "in_time": "2026-06-18", "exp_time": "2026-06-21", "status": "safe"},
+    {"id": 4, "food_name": "石斑鱼", "in_time": "2026-06-14", "exp_time": "2026-06-16", "status": "expired"},
+    {"id": 5, "food_name": "五花肉", "in_time": "2026-06-15", "exp_time": "2026-06-19", "status": "expired"},
+    {"id": 6, "food_name": "清远鸡", "in_time": "2026-06-17", "exp_time": "2026-06-22", "status": "safe"},
+    {"id": 7, "food_name": "照烧酱", "in_time": "2026-05-01", "exp_time": "2026-07-01", "status": "safe"},
+    {"id": 8, "food_name": "松露油", "in_time": "2026-04-10", "exp_time": "2026-06-10", "status": "expired"},
+    {"id": 9, "food_name": "鸡蛋", "in_time": "2026-06-10", "exp_time": "2026-06-24", "status": "safe"},
+    {"id": 10, "food_name": "虾仁", "in_time": "2026-06-16", "exp_time": "2026-06-20", "status": "safe"}
 ]
+kucun_counter = 11
 
 
 # ==============================================================================
-# 【Flask 路由与页面渲染】
+# 算法核心辅助函数
+# ==============================================================================
+
+def add_to_queue_linked_list(node):
+    global queue_head
+    customer_hash_table[node.queue_number] = node
+    if not queue_head:
+        queue_head = node
+        return
+    curr = queue_head
+    while curr.next:
+        curr = curr.next
+    curr.next = node
+
+
+def get_queue_list_by_status(status_filter=None):
+    res = []
+    curr = queue_head
+    while curr:
+        if status_filter is None or curr.status == status_filter:
+            res.append({
+                "id": curr.id,
+                "queue_number": curr.queue_number,
+                "table_category": curr.table_category,
+                "people_count": curr.people_count,
+                "queue_type": curr.queue_type,
+                "status": curr.status
+            })
+        curr = curr.next
+    return res
+
+
+def count_ahead_and_time(table_category):
+    """根据桌型算法计算前方同桌型等待桌数与动态预测时间"""
+    ahead_count = 0
+    curr = queue_head
+    while curr:
+        if curr.status == "waiting" and curr.table_category == table_category:
+            ahead_count += 1
+        curr = curr.next
+    return ahead_count, ahead_count * 8
+
+
+def update_inventory_status():
+    """自动化动态校验食材是否超过保质期红线"""
+    today_str = datetime.date.today().isoformat()
+    for item in inventory_db:
+        if item["exp_time"] < today_str:
+            item["status"] = "expired"
+        else:
+            item["status"] = "safe"
+
+
+# ==============================================================================
+# 补齐所有前端页面的页面路由（防止跳转 404）
 # ==============================================================================
 
 @app.route('/')
-def index_page(): return render_template('index.html')
+def index():
+    return render_template('index.html')
 
 
 @app.route('/user')
-def user_page(): return render_template('user.html')
+def user_portal():
+    return render_template('user.html')
 
 
 @app.route('/login')
-def login_page(): return render_template('login.html')
+def login_page():
+    return render_template('login.html')
 
 
-@app.route('/admin_menu')
-def admin_menu_page(): return render_template('admin_menu.html')
+@app.route('/admin')
+def admin_dashboard():
+    return render_template('admin.html')
 
 
 @app.route('/queue_admin')
-def queue_admin_page(): return render_template('queue_admin.html')
+def queue_management():
+    return render_template('queue_admin.html')
 
 
 @app.route('/kucun')
-def kucun_page(): return render_template('kucun.html')
+def kucun_management():
+    return render_template('kucun.html')
 
+
+# ==============================================================================
+# 异步 API 核心控制接口
+# ==============================================================================
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    data = request.json or {}
-    if data.get('username') == 'admin' and data.get('password') == 'admin123':
-        return jsonify({"code": 200, "msg": "登录成功"})
-    return jsonify({"code": 401, "msg": "账号或密码错误"})
+    data = request.get_json() or {}
+    if data.get('username') == "admin" and data.get('password') == "admin123":
+        return jsonify({"code": 200, "msg": "认证成功"})
+    return jsonify({"code": 403, "msg": "身份验证失败"})
 
-
-# ==============================================================================
-# 【库存管理核心 API】 - 线性表基本操作应用
-# ==============================================================================
-
-@app.route('/api/kucun/list', methods=['GET'])
-def api_kucun_list():
-    """
-    【算法名称】：时间戳比对与线性状态更新算法
-    【时间复杂度】：O(N)
-    """
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    for item in mock_kucun:
-        if item.get('exp_time') and item['exp_time'] < today_str:
-            item['status'] = 'expired'
-        else:
-            item['status'] = 'normal'
-    return jsonify({"code": 200, "data": mock_kucun})
-
-
-@app.route('/api/kucun/add', methods=['POST'])
-def api_kucun_add():
-    data = request.json or {}
-    name = data.get('food_name')
-    in_time = data.get('in_time')
-    exp_time = data.get('exp_time')
-
-    if name:
-        today_str = datetime.now().strftime('%Y-%m-%d')
-        status = 'expired' if exp_time < today_str else 'normal'
-        mock_kucun.append({
-            "id": len(mock_kucun) + 1,
-            "food_name": name,
-            "in_time": in_time,
-            "exp_time": exp_time,
-            "status": status
-        })
-    return jsonify({"code": 200})
-
-
-@app.route('/api/kucun/delete', methods=['POST'])
-def api_kucun_delete():
-    data = request.json or {}
-    global mock_kucun
-    mock_kucun = [i for i in mock_kucun if i['id'] != data.get('id')]
-    return jsonify({"code": 200})
-
-
-@app.route('/api/kucun/clear_expired', methods=['POST'])
-def api_kucun_clear_expired():
-    """
-    【算法名称】：顺序表显式条件过滤与批量移除算法
-    【时间复杂度】：O(N)
-    【描述】：显式遍历线性顺序表，挑出未过期的物料重新组合，达到移除过期项的物理存储优化目的。
-    """
-    global mock_kucun
-    today_str = datetime.now().strftime('%Y-%m-%d')
-
-    active_kucun = []
-    for item in mock_kucun:
-        if item['exp_time'] >= today_str:
-            active_kucun.append(item)
-
-    mock_kucun = active_kucun
-    return jsonify({"code": 200})
-
-
-# ==============================================================================
-# 【排队核心 API】 - 精准双轨排队算法应用
-# ==============================================================================
 
 @app.route('/api/queue/take', methods=['POST'])
-def api_take_queue():
-    """
-    【业务逻辑】：顾客取号，触发入队操作并动态计算精准的前方就餐等待桌数
-    """
-    data = request.json or {}
-    q_type = data.get('type', 'normal')
-    p_count = data.get('people_count', 1)
+def api_queue_take():
+    global node_counter
+    data = request.get_json() or {}
+    try:
+        people_count = int(data.get('people_count', 1))
+    except ValueError:
+        people_count = 1
 
-    prefix = 'V' if q_type == 'VIP' else 'N'
-    new_number = f"{prefix}{queue_system.size() + 1:03d}"
-
-    # --------------------------------------------------------------------------
-    # 【算法名称】：基于客户分级的精准前方桌数动态统计算法
-    # 【时间复杂度】：O(N) - 顺序扫描当前等待链
-    # 【算法描述】：
-    #   1. 若新入队顾客为 VIP 级别：由于其具备高优先级插队权，普通顾客无法对其造成阻碍。
-    #      因此，其前方真正的有效等待桌数，仅仅为当前队列中同样处于 'waiting' 状态的 VIP 顾客数量。
-    #   2. 若新入队顾客为普通级别(normal)：其必须等待当前队列中所有正在排队的人（VIP + 普通人）。
-    # --------------------------------------------------------------------------
-    current_waiting_nodes = [item for item in queue_system.items if item.status == 'waiting']
-
-    if q_type == 'VIP':
-        # 算法分支 A：过滤统计当前排在其前方的 VIP 节点数
-        ahead = sum(1 for item in current_waiting_nodes if item.queue_type == 'VIP')
+    if people_count <= 2:
+        category = "A"
+    elif people_count <= 4:
+        category = "B"
     else:
-        # 算法分支 B：普通顾客需要等待当前全队所有未就餐者
-        ahead = len(current_waiting_nodes)
-    # --------------------------------------------------------------------------
+        category = "C"
 
-    # 构建新节点
-    new_node = QueueNode(
-        q_id=queue_system.size() + 1,
-        queue_number=new_number,
-        q_type=q_type,
-        people_count=p_count
-    )
+    ahead_count, predict_time = count_ahead_and_time(category)
+    queue_number = f"{category}{node_counter:03d}"
 
-    # 【算法调用】：执行手写的优先级插入队列算法
-    queue_system.enqueue(new_node)
+    new_node = QueueNode(node_counter, queue_number, category, people_count, "普通用户")
+    add_to_queue_linked_list(new_node)
+    node_counter += 1
 
-    return jsonify({"code": 200, "data": {"queue_number": new_number, "ahead_count": ahead}})
+    return jsonify({
+        "code": 200,
+        "data": {"queue_number": queue_number, "table_category": f"{category}桌型", "ahead_count": ahead_count,
+                 "predict_time": predict_time}
+    })
 
 
 @app.route('/api/queue/list', methods=['GET'])
 def api_queue_list():
-    """
-    【业务逻辑】：获取叫号管理面板列表
-    【数据状态说明】：由于在 enqueue 时就确保了插入有序性，此处直接线性读取即可，时间复杂度由 O(NlogN) 降为 O(1)。
-    """
-    waiting_data = queue_system.get_waiting_list()
-    return jsonify({"code": 200, "data": waiting_data})
+    return jsonify(
+        {"code": 200, "data": get_queue_list_by_status("waiting"), "called": get_queue_list_by_status("called")})
+
+
+@app.route('/api/queue/all_status_for_screen', methods=['GET'])
+def api_all_status():
+    return jsonify({"code": 200, "data": get_queue_list_by_status(None)})
 
 
 @app.route('/api/queue/operate', methods=['POST'])
 def api_queue_operate():
-    """
-    【算法名称】：线性查找与状态修改算法
-    【时间复杂度】：O(N)
-    """
-    data = request.json or {}
-    target_id = data.get('id')
+    global queue_head
+    data = request.get_json() or {}
+    try:
+        node_id = int(data.get('id'))
+    except (ValueError, TypeError):
+        return jsonify({"code": 400, "msg": "无效的节点ID"})
     action = data.get('action')
 
-    # 遍历队列找到指定ID的节点，更新其状态机
-    for item in queue_system.items:
-        if item.id == target_id:
-            if action == 'call':
-                item.status = 'called'
-            elif action == 'miss':
-                item.status = 'missed'
-            break
+    # 1. 呼叫与过号
+    if action in ['call', 'miss']:
+        curr = queue_head
+        while curr:
+            if curr.id == node_id:
+                if action == 'call':
+                    curr.status = "called"
+                elif action == 'miss':
+                    curr.status = "missed"
+                break
+            curr = curr.next
+        return jsonify({"code": 200, "msg": "调度指令执行成功"})
 
-    return jsonify({"code": 200})
+    # 2. 动态遍历重组插队（置顶）
+    if action == 'jump':
+        target_node = None
+        if queue_head and queue_head.id == node_id:
+            target_node = queue_head
+            queue_head = queue_head.next
+        else:
+            prev = queue_head
+            while prev and prev.next:
+                if prev.next.id == node_id:
+                    target_node = prev.next
+                    prev.next = prev.next.next
+                    break
+                prev = prev.next
+
+        if not target_node:
+            return jsonify({"code": 404, "msg": "未找到活跃顾客"})
+
+        orig_num = target_node.queue_number
+        if not orig_num.startswith('S'):
+            target_node.queue_number = f"S{orig_num[1:]}"
+        target_node.queue_type = "现场紧急插队通道"
+        target_node.status = "waiting"
+        target_node.next = None
+
+        customer_hash_table[target_node.queue_number] = target_node
+
+        if not queue_head or (queue_head.status == "waiting" and not queue_head.queue_number.startswith('S')):
+            target_node.next = queue_head
+            queue_head = target_node
+            return jsonify({"code": 200, "msg": "插队成功"})
+
+        curr = queue_head
+        while curr.next and curr.next.status == "waiting" and curr.next.queue_number.startswith('S'):
+            curr = curr.next
+        target_node.next = curr.next
+        curr.next = target_node
+        return jsonify({"code": 200, "msg": "插队成功"})
+
+    # 3. 过号归队算法（重新排入等待队列第 3 位）
+    if action == 'recover':
+        target_node = None
+        if queue_head and queue_head.id == node_id:
+            target_node = queue_head
+            queue_head = queue_head.next
+        else:
+            prev = queue_head
+            while prev and prev.next:
+                if prev.next.id == node_id:
+                    target_node = prev.next
+                    prev.next = prev.next.next
+                    break
+                prev = prev.next
+
+        if not target_node:
+            return jsonify({"code": 404, "msg": "未找到对应的过号记录"})
+
+        target_node.status = "waiting"
+        target_node.next = None
+
+        if not queue_head:
+            queue_head = target_node
+            return jsonify({"code": 200, "msg": "恢复成功，已安排回队头"})
+
+        curr = queue_head
+        waiting_count = 0
+
+        if curr.status == "waiting":
+            waiting_count += 1
+
+        while curr.next and waiting_count < 2:
+            if curr.next.status == "waiting":
+                waiting_count += 1
+            if waiting_count == 2:
+                break
+            curr = curr.next
+
+        target_node.next = curr.next
+        curr.next = target_node
+
+        return jsonify({"code": 200, "msg": "过号恢复成功，已自动插回等待队列第3位"})
+
+    return jsonify({"code": 400, "msg": "无法识别的管理指令"})
+
+
+# ==============================================================================
+# 补齐后厨食材仓储模块对应的 API 核心控制接口（防止 kucun 页面请求 404）
+# ==============================================================================
+
+@app.route('/api/kucun/list', methods=['GET'])
+def api_kucun_list():
+    update_inventory_status()
+    return jsonify({"code": 200, "data": inventory_db})
+
+
+@app.route('/api/kucun/add', methods=['POST'])
+def api_kucun_add():
+    global kucun_counter
+    data = request.get_json() or {}
+    new_item = {
+        "id": kucun_counter,
+        "food_name": data.get('food_name'),
+        "in_time": data.get('in_time'),
+        "exp_time": data.get('exp_time'),
+        "status": "safe"
+    }
+    inventory_db.append(new_item)
+    kucun_counter += 1
+    return jsonify({"code": 200, "msg": "登记入库成功"})
+
+
+@app.route('/api/kucun/delete', methods=['POST'])
+def api_kucun_delete():
+    data = request.get_json() or {}
+    global inventory_db
+    inventory_db = [item for item in inventory_db if item["id"] != data.get('id')]
+    return jsonify({"code": 200, "msg": "安全销毁成功"})
+
+
+@app.route('/api/kucun/sort', methods=['POST'])
+def api_kucun_sort():
+    """按食材到期时间升序（经典冒泡排序算法）"""
+    update_inventory_status()
+    n = len(inventory_db)
+    for i in range(n - 1):
+        for j in range(0, n - i - 1):
+            if inventory_db[j]["exp_time"] > inventory_db[j + 1]["exp_time"]:
+                inventory_db[j], inventory_db[j + 1] = inventory_db[j + 1], inventory_db[j]
+    return jsonify({"code": 200, "data": inventory_db})
+
+
+@app.route('/api/kucun/clear_expired', methods=['POST'])
+def api_kucun_clear_expired():
+    global inventory_db
+    update_inventory_status()
+    inventory_db = [item for item in inventory_db if item["status"] != "expired"]
+    return jsonify({"code": 200, "msg": "一键清除过期食品成功"})
 
 
 if __name__ == '__main__':
-    # 启动 Flask 服务，监听 5000 端口
     app.run(debug=True, port=5000)

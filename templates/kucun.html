@@ -2,141 +2,164 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>库存管理系统</title>
+    <title>Zhice-库存管理页</title>
     <style>
-        body, html { margin: 0; padding: 0; min-height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; }
-        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
-        .bubble { position: absolute; border-radius: 50%; opacity: 0.5; width: 60vw; height: 60vw; background: radial-gradient(circle, #f7b0ff 0%, transparent 75%); top: -10%; left: -10%; }
-        .wrapper { position: relative; z-index: 10; max-width: 750px; margin: 40px auto; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        h2 { margin: 0; font-weight: 700; }
-        .btn-group { display: flex; gap: 8px; }
-        .btn-base { border: none; padding: 10px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
-        .btn-black { background: #000; color: white; }
-        .btn-blue { background: #007AFF; color: white; }
-        .btn-red { background: rgba(255,59,48,0.1); color: #FF3B30; }
+        body {
+            margin: 0; min-height: 100vh; padding: 40px 20px; box-sizing: border-box;
+            background: radial-gradient(at 0% 0%, #E5E9F2 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, #D7E8D5 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, #AFC7B4 0px, transparent 50%),
+                        radial-gradient(at 0% 100%, #C8D5DD 0px, transparent 50%),
+                        #E5E9F2;
+            background-attachment: fixed; font-family: -apple-system, sans-serif; color: #132219;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn-back { padding: 10px 20px; background: transparent; border: 1px solid #132219; border-radius: 20px; text-decoration: none; color: #132219; font-weight: bold; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.85); border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(74, 99, 83, 0.15); padding: 30px; margin-bottom: 30px;
+        }
+        .input-row { display: flex; gap: 15px; margin-bottom: 10px; align-items: center; }
 
-        .panel { background: rgba(255,255,255,0.45); backdrop-filter: blur(25px); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.55); box-shadow: 0 8px 32px rgba(0,0,0,0.02); }
-        .row { display: flex; justify-content: space-between; align-items: center; padding: 14px 4px; border-bottom: 1px solid rgba(0,0,0,0.04); }
-        .info-col { display: flex; flex-direction: column; gap: 4px; }
-        .time-label { font-size: 12px; color: #86868b; }
-        .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-        .badge-ok { background: rgba(52,199,89,0.1); color: #34C759; }
-        .badge-err { background: rgba(255,59,48,0.1); color: #FF3B30; }
-        .btn-del { border: none; background: rgba(255,59,48,0.1); color: #FF3B30; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 600; margin-left: 10px; }
+        input[type="text"], input[type="date"] {
+            flex: 1; padding: 12px; border: 1px solid rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.2); border-radius: 10px;
+            color: #132219; outline: none; font-size: 14px; font-family: inherit;
+            box-sizing: border-box;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer; opacity: 0.6; filter: invert(10%) sepia(20%) saturate(600%) hue-rotate(85deg);
+        }
 
-        /* Apple 风格弹窗 */
-        .modal-mask { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.12); backdrop-filter: blur(12px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .modal { background: rgba(255,255,255,0.85); backdrop-filter: blur(25px); border-radius: 24px; padding: 30px; width: 90%; max-width: 360px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 45px rgba(0,0,0,0.08); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .modal-mask.active { opacity: 1; pointer-events: auto; }
-        .modal-mask.active .modal { transform: scale(1); }
-        .modal h3 { margin: 0 0 20px 0; font-size: 20px; font-weight: 700; text-align: center; }
-        .form-item { margin-bottom: 16px; text-align: left; }
-        .form-item label { display: block; font-size: 13px; color: #6e6e73; font-weight: 600; margin-bottom: 6px; }
-        .form-item input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.6); outline: none; box-sizing: border-box; font-size: 14px; }
-        .modal-btn-group { display: flex; gap: 12px; margin-top: 24px; }
-        .modal-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; text-align: center; }
+        .btn-ctrl { padding: 12px 25px; background: #132219; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; height: 44px; }
+        .action-bar { display: flex; gap: 15px; margin-bottom: 25px; }
+        .btn-secondary { background: transparent; border: 1px solid #132219; color: #132219; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 15px; border-bottom: 2px solid rgba(0,0,0,0.08); color: #384F41; }
+        td { padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .expired-tr { background: rgba(201, 91, 83, 0.15); color: #C95B53; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="floating-bubbles"><div class="bubble"></div></div>
-    <div class="wrapper">
-        <div class="header">
-            <h2>后厨食材库存管理</h2>
-            <div class="btn-group">
-                <button class="btn-base btn-blue" onclick="openAddModal()">添加食材</button>
-                <button class="btn-base btn-red" onclick="clearExpired()">清理过期</button>
-                <a href="/admin_menu" class="btn-base btn-black">返回菜单</a>
-            </div>
-        </div>
-        <div class="panel" id="kucunContainer">加载中...</div>
+<div class="container">
+    <div class="header-bar">
+        <h2>仓库库存管理</h2>
+        <a href="/admin" class="btn-back">返回主菜单</a>
     </div>
 
-    <div class="modal-mask" id="addStockModal">
-        <div class="modal">
-            <h3>食材入库登记</h3>
-            <div class="form-item">
-                <label>食材名称</label>
-                <input type="text" id="foodName" placeholder="例如：波士顿龙虾">
+    <div class="glass-card">
+        <h3>食材登记入库</h3>
+        <div class="input-row">
+            <input type="text" id="food-name" placeholder="请输入食材名称" style="flex: 1.5;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; color:#384F41; font-weight: bold; padding-left:4px;">入库日期</span>
+                <input type="date" id="in-time">
             </div>
-            <div class="form-item">
-                <label>入库时间</label>
-                <input type="date" id="inTime">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <span style="font-size: 11px; color:#384F41; font-weight: bold; padding-left:4px;">保质期至</span>
+                <input type="date" id="exp-time">
             </div>
-            <div class="form-item">
-                <label>过期时间</label>
-                <input type="date" id="expTime">
-            </div>
-            <div class="modal-btn-group">
-                <button class="modal-btn" style="background: rgba(0,0,0,0.05); color:#000;" onclick="closeAddModal()">取消</button>
-                <button class="modal-btn" style="background: #007AFF; color:#fff;" onclick="submitFood()">确认入库</button>
-            </div>
+            <button class="btn-ctrl" onclick="addFoodItem()" style="align-self: flex-end;">确认登记</button>
         </div>
     </div>
 
-    <script>
-        // 自动格式化当天日期
-        function getTodayDate() {
-            const d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        }
+    <div class="glass-card">
+        <div class="action-bar">
+            <button class="btn-ctrl" onclick="sortInventory()">按保质期智能排序</button>
+            <button class="btn-ctrl btn-secondary" onclick="clearExpired()">一键清理过期食材</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>食材名称</th>
+                    <th>入库时间</th>
+                    <th>过期时间</th>
+                    <th>食材状态</th>
+                    <th>管理库存</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-tbody"></tbody>
+        </table>
+    </div>
+</div>
 
-        function openAddModal() {
-            document.getElementById('inTime').value = getTodayDate();
-            document.getElementById('addStockModal').classList.add('active');
-        }
+<script {nonce}>
+    function initDateInputs() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('in-time').value = today;
+        document.getElementById('exp-time').value = today;
+    }
 
-        function closeAddModal() {
-            document.getElementById('addStockModal').classList.remove('active');
-            document.getElementById('foodName').value = '';
-            document.getElementById('expTime').value = '';
-        }
+    function renderTable(data) {
+        const tbody = document.getElementById('inventory-tbody');
+        tbody.innerHTML = data.map(item => `
+            <tr class="${item.status === 'expired' ? 'expired-tr' : ''}">
+                <td># ${item.id}</td>
+                <td><b>${item.food_name}</b></td>
+                <td>${item.in_time}</td>
+                <td>${item.exp_time}</td>
+                <td>${item.status === 'expired' ? '已过期' : '未过期'}</td>
+                <td><button style="color:#C95B53; cursor:pointer; background:transparent; border:none; font-weight:bold;" onclick="deleteItem(${item.id})">移除</button></td>
+            </tr>
+        `).join('');
+    }
 
-        function refresh() {
-            fetch('/api/kucun/list').then(r => r.json()).then(res => {
-                if(res.code === 200) {
-                    if(res.data.length === 0) {
-                        document.getElementById('kucunContainer').innerHTML = '<div style="color:#86868b;text-align:center;padding:20px 0;">暂无库存物料</div>';
-                        return;
-                    }
-                    document.getElementById('kucunContainer').innerHTML = res.data.map(i => `
-                        <div class="row">
-                            <div class="info-col">
-                                <span style="font-weight:600; font-size:16px; color:#1d1d1f;">${i.food_name}</span>
-                                <span class="time-label">入库: ${i.in_time || '--'} | 到期: ${i.exp_time || '--'}</span>
-                            </div>
-                            <div>
-                                <span class="badge ${i.status==='expired'?'badge-err':'badge-ok'}">${i.status==='expired'?'已到期':'安全'}</span>
-                                <button class="btn-del" onclick="del(${i.id})">移除</button>
-                            </div>
-                        </div>
-                    `).join('');
+    function refreshData() {
+        fetch('/api/kucun/list')
+            .then(res => res.json())
+            .then(res => {
+                if(res.code === 200 && res.data) {
+                    renderTable(res.data);
                 }
             });
-        }
+    }
 
-        function submitFood() {
-            const name = document.getElementById('foodName').value.trim();
-            const inTime = document.getElementById('inTime').value;
-            const expTime = document.getElementById('expTime').value;
+    function addFoodItem() {
+        const n = document.getElementById('food-name').value;
+        const i = document.getElementById('in-time').value;
+        const e = document.getElementById('exp-time').value;
+        if(!n || !i || !e) { alert("请完整填写食物名称与对应日期！"); return; }
+        if(new Date(e) < new Date(i)) { alert("错误：质保到期日期不能早于入库日期！"); return; }
 
-            if(!name) { alert('请输入食材名称'); return; }
-            if(!expTime) { alert('请设置过期时间'); return; }
+        fetch('/api/kucun/add', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({food_name: n, in_time: i, exp_time: e})
+        }).then(() => {
+            document.getElementById('food-name').value = "";
+            refreshData();
+        });
+    }
 
-            fetch('/api/kucun/add', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({food_name: name, in_time: inTime, exp_time: expTime})
-            }).then(() => {
-                closeAddModal();
-                refresh();
+    function deleteItem(id) {
+        fetch('/api/kucun/delete', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        }).then(() => refreshData());
+    }
+
+    function sortInventory() {
+        fetch('/api/kucun/sort', { method: 'POST' })
+            .then(res => res.json())
+            .then(res => {
+                if(res.code === 200 && res.data) {
+                    renderTable(res.data);
+                }
             });
-        }
+    }
 
-        function del(id) { fetch('/api/kucun/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id})}).then(() => refresh()); }
-        function clearExpired() { fetch('/api/kucun/clear_expired', {method:'POST'}).then(() => refresh()); }
-        document.addEventListener("DOMContentLoaded", refresh);
-    </script>
+    function clearExpired() {
+        fetch('/api/kucun/clear_expired', { method: 'POST' }).then(() => refreshData());
+    }
+
+    window.onload = function() {
+        initDateInputs();
+        refreshData();
+    };
+</script>
 </body>
 </html>

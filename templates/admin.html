@@ -1,16 +1,143 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8"><title>控制中心</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zhice-智策餐饮管理员端</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-shadow: rgba(74, 99, 83, 0.2);
+            --text-main: #132219;
+            --text-muted: #384F41;
+        }
+
+        body {
+            margin: 0; padding: 0; min-height: 100vh;
+            background: radial-gradient(at 0% 0%, #E5E9F2 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, #D7E8D5 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, #AFC7B4 0px, transparent 50%),
+                        radial-gradient(at 0% 100%, #C8D5DD 0px, transparent 50%),
+                        #E5E9F2;
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 1100px; margin: 60px auto; padding: 0 20px; }
+        .welcome-header { text-align: center; margin-bottom: 50px; }
+        .welcome-header h1 { font-size: 32px; font-weight: 700; letter-spacing: 2px; margin: 0 0 10px 0; }
+        .welcome-header p { color: var(--text-muted); font-size: 16px; margin: 0; }
+
+        .admin-layout { display: grid; grid-template-columns: 1fr 1.8fr; gap: 35px; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.7);
+            padding: 35px; box-sizing: border-box;
+        }
+
+        .monitor-sidebar { display: flex; flex-direction: column; gap: 25px; }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px; padding: 22px; text-align: center;
+        }
+        .stat-title { font-size: 13px; font-weight: bold; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-value { font-size: 38px; font-weight: 800; color: var(--text-main); }
+
+        .menu-grid { display: flex; flex-direction: column; gap: 25px; }
+        .menu-item-inner {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 18px; padding: 25px;
+            display: flex; align-items: center; gap: 25px;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .menu-item-inner:hover { transform: translateX(6px); background: rgba(255, 255, 255, 0.2); }
+
+        .icon-box {
+            font-size: 24px; font-weight: bold; background: rgba(255, 255, 255, 0.35);
+            width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;
+            border-radius: 16px; border: 1px solid rgba(255,255,255,0.6); flex-shrink: 0;
+        }
+
+        .text-box { flex-grow: 1; }
+        .text-box h3 { margin: 0 0 8px 0; font-size: 20px; }
+        .text-box p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+
+        .btn-go {
+            width: 45px; height: 45px; background: var(--text-main); color: #ffffff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            text-decoration: none; font-weight: bold; font-size: 18px; flex-shrink: 0;
+        }
+
+        .logout-bar { text-align: right; margin-top: 15px; width: 100%; }
+        .btn-logout { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 600; border-bottom: 1px dashed var(--text-muted); }
+        .btn-logout:hover { color: #C95B53; border-bottom-color: #C95B53; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <h1>后台管理工作台</h1>
-        <p class="subtitle">Restaurant Management Center</p>
-        <button class="btn btn-primary" style="margin-bottom:14px; padding:14px;" onclick="location.href='/queue_admin'">排队调度与大厅叫号</button>
-        <button class="btn btn-primary" style="margin-bottom:14px; background:#424245;" onclick="location.href='/kucun'">后厨物料看板管理</button>
-        <button class="btn btn-secondary" onclick="location.href='/'">退出管理员身份</button>
+<div class="container">
+    <div class="welcome-header">
+        <h1>Zhice系统管理员端</h1>
+        <p>管理排队信息，库存余量</p>
     </div>
+
+    <div class="admin-layout">
+        <div class="glass-card monitor-sidebar">
+            <h3 style="margin: 0 0 10px 0; font-size: 18px;">实时状态</h3>
+            <div class="stat-box">
+                <div class="stat-title">等待桌数</div>
+                <div id="stat-queue-main" class="stat-value">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">库存数量</div>
+                <div id="stat-kucun-main" class="stat-value">--</div>
+            </div>
+        </div>
+
+        <div class="glass-card menu-grid">
+            <div class="menu-item-inner">
+                <div class="icon-box">排队</div>
+                <div class="text-box">
+                    <h3>排队信息管理</h3>
+                </div>
+                <a href="/queue_admin" class="btn-go">→</a>
+            </div>
+
+            <div class="menu-item-inner">
+                <div class="icon-box">仓库</div>
+                <div class="text-box">
+                    <h3>仓库库存管理</h3>
+                </div>
+                <a href="/kucun" class="btn-go">→</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="logout-bar">
+        <a href="/" class="btn-logout">返回首页</a>
+    </div>
+</div>
+
+<script>
+    function updateAdminStats() {
+        fetch('/api/queue/list').then(res => res.json()).then(res => {
+            if(res.code === 200) document.getElementById('stat-queue-main').innerText = res.data.length + " 桌";
+        });
+        fetch('/api/kucun/list').then(res => res.json()).then(res => {
+            if(res.code === 200) document.getElementById('stat-kucun-main').innerText = res.data.length + " 样";
+        });
+    }
+    setInterval(updateAdminStats, 1000);
+    window.onload = updateAdminStats;
+</script>
 </body>
 </html>

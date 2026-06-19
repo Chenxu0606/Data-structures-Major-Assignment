@@ -3,32 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智策餐饮系统</title>
+    <title>Zhice-智策餐饮叫号大屏</title>
     <style>
-        :root { --apple-blue: #007AFF; }
-        body, html { margin: 0; padding: 0; width: 100vw; height: 100vh; background: #f5f5f7; font-family: -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .floating-bubbles { position: fixed; width: 100vw; height: 100vh; z-index: 1; filter: blur(140px); background: #fff; }
-        .bubble { position: absolute; border-radius: 50%; opacity: 0.6; mix-blend-mode: multiply; }
-        .bubble:nth-child(1) { width: 60vw; height: 60vw; top: -10%; left: -10%; background: radial-gradient(circle, #b0c5f3 0%, transparent 75%); }
-        .bubble:nth-child(2) { width: 60vw; height: 60vw; bottom: -10%; right: -10%; background: radial-gradient(circle, #91f6e3 0%, transparent 75%); }
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-shadow: rgba(74, 99, 83, 0.15);
+            --text-main: #132219;
+            --text-muted: #384F41;
+            --badge-normal: #7CA18C;
+            --badge-vip: #D9A74A;
+            --badge-emergency: #C95B53;
+            --badge-missed: rgba(255, 255, 255, 0.2);
+        }
 
-        .container { position: relative; z-index: 10; text-align: center; width: 85vw; max-width: 1000px; padding: 50px; background: rgba(255,255,255,0.45); backdrop-filter: blur(30px); border-radius: 32px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 50px rgba(0,0,0,0.03); }
-        h1 { font-size: 42px; font-weight: 700; margin-bottom: 40px; letter-spacing: -1px; }
-        .btn-group { display: flex; gap: 30px; justify-content: center; }
-        .btn { flex: 1; max-width: 300px; padding: 24px; font-size: 18px; font-weight: 600; text-decoration: none; border-radius: 20px; transition: transform 0.25s ease; color: white; text-align: center; }
-        .btn-user { background: var(--apple-blue); box-shadow: 0 8px 25px rgba(0,122,255,0.25); }
-        .btn-admin { background: #000; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
-        .btn:hover { transform: scale(1.03) translateY(-2px); opacity: 0.9; }
+        body {
+            margin: 0; padding: 0; min-height: 100vh;
+            background: radial-gradient(at 0% 0%, #E5E9F2 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, #D7E8D5 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, #AFC7B4 0px, transparent 50%),
+                        radial-gradient(at 0% 100%, #C8D5DD 0px, transparent 50%),
+                        #E5E9F2;
+            background-attachment: fixed;
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 1200px; margin: 50px auto; padding: 0 20px; }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        .screen-card { padding: 35px; margin-bottom: 40px; }
+        .screen-header { text-align: center; font-size: 26px; font-weight: 600; letter-spacing: 2px; margin-bottom: 35px; }
+        .screen-grid { display: grid; grid-template-columns: 1.2fr 1.5fr 1.3fr; gap: 25px; }
+
+        .screen-box {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 18px; padding: 25px; text-align: center; display: flex; flex-direction: column; min-height: 220px;
+        }
+
+        .box-title { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; font-weight: bold; letter-spacing: 1px; }
+        .big-number { font-size: 64px; font-weight: 800; font-family: monospace; color: var(--text-main); margin: auto 0; }
+        .queue-wrapper { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-content: flex-start; overflow-y: auto; max-height: 200px; }
+
+        .badge-node { padding: 10px 18px; border-radius: 12px; font-family: monospace; font-size: 16px; font-weight: bold; color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .bg-N { background: var(--badge-normal); }
+        .bg-V { background: var(--badge-vip); }
+        .bg-S { background: var(--badge-emergency); animation: pulse 2s infinite; }
+        .bg-missed { background: var(--badge-missed); color: var(--text-muted); border: 1px dashed rgba(0, 0, 0, 0.2); text-decoration: line-through; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+
+        .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 30px; }
+        .portal-card { padding: 35px; text-align: center; transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        .portal-card:hover { transform: translateY(-8px); }
+        .portal-card h3 { margin: 0 0 12px 0; font-size: 21px; }
+
+        .btn-link { display: inline-block; padding: 12px 35px; border-radius: 30px; font-weight: 600; text-decoration: none; width: 75%; box-sizing: border-box; }
+        .btn-green { background: var(--text-main); color: #ffffff; }
+        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--text-main); }
+        .queue-wrapper::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
 <body>
-    <div class="floating-bubbles"><div class="bubble"></div><div class="bubble"></div></div>
-    <div class="container">
-        <h1>智策餐饮系统</h1>
-        <div class="btn-group">
-            <a href="/user" class="btn btn-user">自助取号</a>
-            <a href="/login" class="btn btn-admin">管理员端</a>
+<div class="container">
+    <div class="glass-card screen-card">
+        <div class="screen-header">Zhice-智策餐饮叫号大屏</div>
+        <div class="screen-grid">
+            <div class="screen-box">
+                <div class="box-title">请以下号码前往就餐</div>
+                <div id="screen-current" class="big-number">--</div>
+            </div>
+            <div class="screen-box">
+                <div class="box-title" id="waiting-count-title">正在排队等待：0 桌</div>
+                <div id="screen-waiting-list" class="queue-wrapper">
+                    <span style="color: var(--text-muted); font-style: italic; margin-top: 20px;">暂无排队客流</span>
+                </div>
+            </div>
+            <div class="screen-box">
+                <div class="box-title">已过号顾客 (请联系前台)</div>
+                <div id="screen-missed-list" class="queue-wrapper">
+                    <span style="color: var(--text-muted); font-style: italic; margin-top: 20px;">暂无过号记录</span>
+                </div>
+            </div>
         </div>
     </div>
+
+    <div class="portal-grid">
+        <div class="glass-card portal-card">
+            <h3>顾客取号端</h3>
+            <a href="/user" class="btn-link btn-green">进入取号端</a>
+        </div>
+        <div class="glass-card portal-card">
+            <h3>管理员控制端</h3>
+            <a href="/login" class="btn-link btn-outline">登录管理端</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    let lastSpokenNumber = "";
+
+    function triggerVoiceBroadcast(textToSpeak) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            let utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function globalSyncEngine() {
+        fetch('/api/queue/list')
+            .then(res => res.json())
+            .then(res => {
+                if(res.code === 200) {
+                    const currentBox = document.getElementById('screen-current');
+                    if (res.called && Array.isArray(res.called) && res.called.length > 0) {
+                        const currentNum = res.called[res.called.length - 1].queue_number;
+                        currentBox.innerText = currentNum;
+
+                        if (currentNum !== lastSpokenNumber) {
+                            lastSpokenNumber = currentNum;
+                            triggerVoiceBroadcast(`请 ${currentNum} 号顾客前往就餐`);
+                        }
+                    } else { currentBox.innerText = "--"; }
+
+                    const waitingContainer = document.getElementById('screen-waiting-list');
+                    document.getElementById('waiting-count-title').innerText = `正在排队等待：${res.data.length} 桌`;
+                    if (res.data && res.data.length > 0) {
+                        waitingContainer.innerHTML = res.data.map(node => {
+                            let c = 'bg-N';
+                            if (node.queue_number.includes('S')) c = 'bg-S';
+                            else if (node.queue_number.includes('V')) c = 'bg-V';
+                            return `<div class="badge-node ${c}">${node.queue_number}</div>`;
+                        }).join('');
+                    } else { waitingContainer.innerHTML = `<span style="color: var(--text-muted); font-style: italic; margin-top:20px;">暂无排队客流</span>`; }
+                }
+            });
+
+        fetch('/api/queue/all_status_for_screen')
+            .then(res => res.json())
+            .then(res => {
+                if(res.code === 200 && res.data) {
+                    const missedContainer = document.getElementById('screen-missed-list');
+                    let missedNodes = res.data.filter(item => item.status === 'missed');
+                    if(missedNodes.length > 0) {
+                        missedContainer.innerHTML = missedNodes.map(node => {
+                            return `<div class="badge-node bg-missed">${node.queue_number}</div>`;
+                        }).join('');
+                    } else { missedContainer.innerHTML = `<span style="color: var(--text-muted); font-style: italic; margin-top: 20px;">暂无过号记录</span>`; }
+                }
+            });
+    }
+
+    setInterval(globalSyncEngine, 1000);
+    window.onload = globalSyncEngine;
+</script>
 </body>
 </html>
